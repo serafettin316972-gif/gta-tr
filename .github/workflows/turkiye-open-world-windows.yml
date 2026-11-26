@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   windows-build:
@@ -86,3 +86,10 @@ jobs:
           path: TurkiyeOpenWorld/TurkiyeOpenWorld_Windows_x64.zip
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish ZIP as GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "windows-build-${{ github.run_id }}"
+          gh release create $tag "TurkiyeOpenWorld_Windows_x64.zip" --repo $env:GITHUB_REPOSITORY --title "GTA TR Windows x64" --notes "Automated Windows 64-bit build. ZIP contains the game EXE and PCK."

@@ -370,7 +370,7 @@ func _process(delta: float) -> void:
 		return
 	var time_text := "%02d:%02d" % [int(day_time), int(fposmod(day_time * 60, 60))]
 	info.text = "₺ %s\nSağlık: %d   Aranma: %s\nSaat: %s\nGörev: Mahalle marketine git" % [str(money), player.health, "★".repeat(wanted), time_text]
-	var near_car = null
+	var near_car: CharacterBody3D = null
 	for child in get_children():
 		if child is CharacterBody3D and child != player and child.get_script() == VehicleScript and child.global_position.distance_to(player.global_position) < 4.0:
 			near_car = child

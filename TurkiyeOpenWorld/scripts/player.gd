@@ -142,8 +142,8 @@ func _make_leg(side: int, pants: Material, stripe_mat: Material, shoe_mat: Mater
 	_capsule(pivot, Vector3(0, -0.22, 0), 0.12, 0.52, pants)
 	_box(pivot, Vector3(0.105 * side, -0.22, -0.005), Vector3(0.025, 0.40, 0.13), stripe_mat)
 	_capsule(pivot, Vector3(0, -0.57, 0), 0.105, 0.43, pants)
-	_box(pivot, Vector3(0, -0.79, -0.055), Vector3(0.22, 0.13, 0.34), shoe_mat)
-	_box(pivot, Vector3(0, -0.855, -0.07), Vector3(0.22, 0.025, 0.33), stripe_mat)
+	_box(pivot, Vector3(0, -0.70, -0.055), Vector3(0.22, 0.13, 0.34), shoe_mat)
+	_box(pivot, Vector3(0, -0.765, -0.07), Vector3(0.22, 0.025, 0.33), stripe_mat)
 	return pivot
 
 func _unhandled_input(event: InputEvent) -> void:

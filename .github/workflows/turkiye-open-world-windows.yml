@@ -2,11 +2,15 @@ name: Türkiye Open World - Windows x64
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, gta5-style-rebuild]
     paths:
       - "TurkiyeOpenWorld/**"
       - ".github/workflows/turkiye-open-world-windows.yml"
   workflow_dispatch:
+
+concurrency:
+  group: turkiye-open-world-windows-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -22,6 +26,60 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Download custom rigged 3D player model
+        run: |
+          New-Item -ItemType Directory -Force -Path assets | Out-Null
+          $modelPath = "assets/man-base-character-rigged.glb"
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/serafettin316972-gif/3d/main/man-base-character-rigged.glb" -OutFile $modelPath
+          $model = Get-Item $modelPath
+          if ($model.Length -lt 1024) { throw "Rigged GLB character download is missing or incomplete." }
+          Write-Host "Custom character downloaded: $($model.Length) bytes"
+
+          $truckPath = "assets/1950s-pickup-truck.glb"
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/serafettin316972-gif/3d/main/1950s-pickup-truck.glb" -OutFile $truckPath
+          $truck = Get-Item $truckPath
+          if ($truck.Length -lt 1024) { throw "1950s pickup truck download is missing or incomplete." }
+          Write-Host "Custom pickup truck downloaded: $($truck.Length) bytes"
+          Write-Host "Rigged player with idle/walk/run animation support is selected."
+
+      - name: Download custom 1950s pickup truck
+        run: |
+          $modelPath = "assets/1950s-pickup-truck.glb"
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/serafettin316972-gif/3d/main/1950s-pickup-truck.glb" -OutFile $modelPath
+          $model = Get-Item $modelPath
+          if ($model.Length -lt 1024) { throw "Custom pickup truck download is missing or incomplete." }
+          Write-Host "Custom pickup truck downloaded: $($model.Length) bytes"
+
+
+      - name: Download sixteen environment, vehicle and landmark models
+        run: |
+          $assets = @{
+            "1950s-roadster.glb" = "1950s-roadster.glb"
+            "1990s-taxi.glb" = "1990s-taxi.glb"
+            "brick-wall.glb" = "brick-wall.glb"
+            "chain-link-fence-light.glb" = "chain-link-fence-light.glb"
+            "concrete-barrier.glb" = "concrete-barrier.glb"
+            "construction-barrier.glb" = "construction-barrier.glb"
+            "direction-arrow.glb" = "direction-arrow.glb"
+            "fire-hydrant.glb" = "fire-hydrant.glb"
+            "roundabout-light.glb" = "roundabout-light.glb"
+            "bank-light.glb" = "bank-light.glb"
+            "cinema-light.glb" = "cinema-light.glb"
+            "city-block-filler-light.glb" = "city-block-filler-light.glb"
+            "general-store.glb" = "general-store.glb"
+            "saloon.glb" = "saloon.glb"
+            "sheriff-office.glb" = "sheriff-office.glb"
+            "tunnel-entrance.glb" = "tunnel-entrance.glb"
+          }
+          foreach ($name in $assets.Keys) {
+            $path = "assets/$name"
+            $uri = "https://raw.githubusercontent.com/serafettin316972-gif/3d/main/$name"
+            Invoke-WebRequest -Uri $uri -OutFile $path
+            $file = Get-Item $path
+            if ($file.Length -lt 1024) { throw "Model download missing or incomplete: $name" }
+            Write-Host "$name downloaded: $($file.Length) bytes"
+          }
 
       - name: Download Godot 4.3 and export templates
         run: |
@@ -47,15 +105,21 @@ jobs:
           & $godot.FullName --version
           if ($LASTEXITCODE -ne 0) { throw "Godot version check failed." }
 
-      - name: Import project and parse all scripts
+      - name: Import project and validate all scripts
         run: |
-          & $env:GODOT --headless --editor --path . --quit
-          if ($LASTEXITCODE -ne 0) { throw "Godot editor import/script parse failed: $LASTEXITCODE" }
+          $output = (& $env:GODOT --headless --editor --path . --quit 2>&1 | Out-String)
+          Write-Host $output
+          if ($LASTEXITCODE -ne 0 -or $output -match "SCRIPT ERROR:|ERROR: Failed to load script|Parse Error:") {
+            throw "Godot script validation reported errors."
+          }
 
       - name: Run headless scene smoke test
         run: |
-          & $env:GODOT --headless --path . --quit-after 5
-          if ($LASTEXITCODE -ne 0) { throw "Headless scene smoke test failed: $LASTEXITCODE" }
+          $output = (& $env:GODOT --headless --path . --quit-after 5 2>&1 | Out-String)
+          Write-Host $output
+          if ($LASTEXITCODE -ne 0 -or $output -match "SCRIPT ERROR:|ERROR: Failed to load script|Parse Error:") {
+            throw "Headless scene startup reported script errors."
+          }
 
       - name: Export Windows 64-bit release
         run: |

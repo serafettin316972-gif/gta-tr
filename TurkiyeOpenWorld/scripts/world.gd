@@ -28,6 +28,34 @@ func _ready() -> void:
 	_spawn_npcs()
 	_setup_hud()
 	_load_game()
+	_activate_game_camera()
+
+
+func _activate_game_camera() -> void:
+	# Re-assert the player's camera only after every world asset and UI node
+	# has been created. This prevents imported scenes from leaving the viewport
+	# with no active 3D camera (which otherwise shows only the blue clear color).
+	if player != null and is_instance_valid(player):
+		var player_camera = player.get("camera")
+		if player_camera is Camera3D:
+			player_camera.current = true
+			player_camera.fov = 72.0
+			player_camera.near = 0.05
+			player_camera.far = 500.0
+			player_camera.make_current()
+			return
+
+	# Last-resort visible camera: never leave the game displaying an empty
+	# viewport if the player controller failed to create its own camera.
+	var fallback := Camera3D.new()
+	fallback.name = "EmergencyGameCamera"
+	fallback.position = Vector3(0.0, 8.0, 18.0)
+	fallback.look_at(Vector3(0.0, 1.0, 0.0), Vector3.UP)
+	fallback.fov = 72.0
+	fallback.far = 500.0
+	add_child(fallback)
+	fallback.make_current()
+
 
 func _mat(color: Color, rough := 0.85) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()

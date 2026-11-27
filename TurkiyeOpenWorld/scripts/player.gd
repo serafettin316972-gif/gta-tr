@@ -83,6 +83,16 @@ func _build_character() -> void:
 	visual = Node3D.new()
 	add_child(visual)
 
+	# Prefer the custom GLB character downloaded by the Windows build workflow.
+	var imported_scene := load("res://assets/man-base-character-light.glb") as PackedScene
+	if imported_scene != null:
+		var imported_model := imported_scene.instantiate() as Node3D
+		if imported_model != null:
+			visual.add_child(imported_model)
+			_fit_imported_model(imported_model)
+			_play_imported_idle(imported_model)
+			return
+
 	var tracksuit := _material("tracksuit", Color(0.018, 0.024, 0.032))
 	var tracksuit_dark := _material("tracksuit_dark", Color(0.009, 0.013, 0.019))
 	var stripe := _material("stripe", Color(0.83, 0.85, 0.84), 0.55)
@@ -124,6 +134,42 @@ func _build_character() -> void:
 	right_arm = _make_arm(1, tracksuit, stripe, skin)
 	left_leg = _make_leg(-1, tracksuit, stripe, shoe)
 	right_leg = _make_leg(1, tracksuit, stripe, shoe)
+
+func _fit_imported_model(model: Node3D) -> void:
+	var meshes := model.find_children("*", "MeshInstance3D", true, false)
+	var found_mesh := false
+	var min_y := INF
+	var max_y := -INF
+	for item in meshes:
+		var mesh_instance := item as MeshInstance3D
+		if mesh_instance == null or mesh_instance.mesh == null:
+			continue
+		var bounds: AABB = mesh_instance.global_transform * mesh_instance.get_aabb()
+		min_y = minf(min_y, bounds.position.y)
+		max_y = maxf(max_y, bounds.position.y + bounds.size.y)
+		found_mesh = true
+	if found_mesh and max_y - min_y > 0.001:
+		var fit_scale := 1.75 / (max_y - min_y)
+		model.scale *= fit_scale
+		model.position.y = -min_y * fit_scale
+
+func _play_imported_idle(model: Node3D) -> void:
+	var players := model.find_children("*", "AnimationPlayer", true, false)
+	for item in players:
+		var animation_player := item as AnimationPlayer
+		if animation_player == null:
+			continue
+		var animations := animation_player.get_animation_list()
+		if animations.is_empty():
+			continue
+		var selected := str(animations[0])
+		for animation_name in animations:
+			var candidate := str(animation_name).to_lower()
+			if candidate.contains("idle"):
+				selected = str(animation_name)
+				break
+		animation_player.play(selected)
+		return
 
 func _make_arm(side: int, jacket: Material, stripe_mat: Material, hand_mat: Material) -> Node3D:
 	var pivot := Node3D.new()
@@ -184,6 +230,8 @@ func _physics_process(delta: float) -> void:
 	_animate_character(delta, input_dir.length() > 0.05, running)
 
 func _animate_character(delta: float, moving: bool, running: bool) -> void:
+	if left_leg == null or right_leg == null or left_arm == null or right_arm == null or torso == null:
+		return
 	var amount := 1.0 if moving else 0.0
 	var frequency := 11.5 if running else 8.2
 	if moving:

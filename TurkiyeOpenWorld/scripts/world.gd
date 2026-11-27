@@ -18,9 +18,11 @@ var inventory_open := false
 var e_was_down := false
 
 func _ready() -> void:
+	# Create the player camera before building the world. If an environment
+	# asset fails during setup, the game still has an active camera.
+	_spawn_player()
 	_setup_world()
 	_spawn_environment_assets()
-	_spawn_player()
 	_spawn_traffic()
 	_spawn_player_vehicle()
 	_spawn_npcs()
@@ -204,6 +206,15 @@ func _spawn_environment_assets() -> void:
 
 	# A directional street marker at the nearby junction.
 	_spawn_asset("direction-arrow.glb", Vector3(5.5, 0.0, -5.5), 0.8, PI * 0.25)
+
+	# Seven new landmarks from the user's latest 3D asset collection.
+	_spawn_asset("bank-light.glb", Vector3(48.0, 0.0, 38.0), 1.0, PI)
+	_spawn_asset("cinema-light.glb", Vector3(-48.0, 0.0, 38.0), 1.0, 0.0)
+	_spawn_asset("city-block-filler-light.glb", Vector3(-60.0, 0.0, -24.0), 1.0, PI * 0.5)
+	_spawn_asset("general-store.glb", Vector3(16.0, 0.0, -12.0), 1.0, PI)
+	_spawn_asset("saloon.glb", Vector3(60.0, 0.0, -38.0), 1.0, PI)
+	_spawn_asset("sheriff-office.glb", Vector3(60.0, 0.0, -58.0), 1.0, PI)
+	_spawn_asset("tunnel-entrance.glb", Vector3(0.0, 0.0, -120.0), 1.0, 0.0)
 
 func _multi_boxes(parent: Node3D, size: Vector3, material: Material, transforms: Array[Transform3D]) -> void:
 	if transforms.is_empty():

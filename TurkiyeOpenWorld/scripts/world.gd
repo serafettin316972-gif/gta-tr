@@ -273,9 +273,9 @@ func _create_building(center: Vector3, width: float, height: float, depth: float
 	var facade := _mat(wall_color, 0.92)
 	var trim := _mat(wall_color.darkened(0.20), 0.86)
 	var concrete := _mat(Color(0.56, 0.54, 0.49), 0.9)
-	var dark_glass := _mat(Color(0.045, 0.105, 0.15), 0.2, 0.12)
-	var glass_reflect := _mat(Color(0.20, 0.31, 0.35), 0.22, 0.08)
-	var metal := _mat(Color(0.16, 0.18, 0.19), 0.55, 0.45)
+	var dark_glass := _mat(Color(0.045, 0.105, 0.15), 0.2)
+	var glass_reflect := _mat(Color(0.20, 0.31, 0.35), 0.22)
+	var metal := _mat(Color(0.16, 0.18, 0.19), 0.55)
 	var wood := _mat(Color(0.25, 0.12, 0.065), 0.72)
 	var sign_red := _mat(Color(0.62, 0.075, 0.045), 0.6)
 	var sign_light := _mat(Color(0.88, 0.79, 0.60), 0.75)
@@ -359,7 +359,7 @@ func _create_building(center: Vector3, width: float, height: float, depth: float
 	for side in [-1, 1]:
 		_box(building, Vector3(side * width * 0.5, height + 0.38, 0), Vector3(0.18, 0.76, depth + 0.24), trim)
 		_box(building, Vector3(0, height + 0.38, side * depth * 0.5), Vector3(width + 0.24, 0.76, 0.18), trim)
-	_box(building, Vector3(-width * 0.25, height + 0.72, depth * 0.18), Vector3(2.0, 1.25, 2.0), facade.darkened(0.08))
+	_box(building, Vector3(-width * 0.25, height + 0.72, depth * 0.18), Vector3(2.0, 1.25, 2.0), _mat(wall_color.darkened(0.08)))
 	var tank := MeshInstance3D.new()
 	var tank_mesh := CylinderMesh.new()
 	tank_mesh.top_radius = 0.55
@@ -367,7 +367,7 @@ func _create_building(center: Vector3, width: float, height: float, depth: float
 	tank_mesh.height = 1.15
 	tank.mesh = tank_mesh
 	tank.position = Vector3(width * 0.24, height + 1.0, depth * 0.18)
-	tank.material_override = _mat(Color(0.24, 0.29, 0.31), 0.42, 0.35)
+	tank.material_override = _mat(Color(0.24, 0.29, 0.31), 0.42)
 	building.add_child(tank)
 	var dish := MeshInstance3D.new()
 	var dish_mesh := SphereMesh.new()

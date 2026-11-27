@@ -105,15 +105,21 @@ jobs:
           & $godot.FullName --version
           if ($LASTEXITCODE -ne 0) { throw "Godot version check failed." }
 
-      - name: Import project and parse all scripts
+      - name: Import project and validate all scripts
         run: |
-          & $env:GODOT --headless --editor --path . --quit
-          if ($LASTEXITCODE -ne 0) { throw "Godot editor import/script parse failed: $LASTEXITCODE" }
+          $output = (& $env:GODOT --headless --editor --path . --quit 2>&1 | Out-String)
+          Write-Host $output
+          if ($LASTEXITCODE -ne 0 -or $output -match "SCRIPT ERROR:|ERROR: Failed to load script|Parse Error:") {
+            throw "Godot script validation reported errors."
+          }
 
       - name: Run headless scene smoke test
         run: |
-          & $env:GODOT --headless --path . --quit-after 5
-          if ($LASTEXITCODE -ne 0) { throw "Headless scene smoke test failed: $LASTEXITCODE" }
+          $output = (& $env:GODOT --headless --path . --quit-after 5 2>&1 | Out-String)
+          Write-Host $output
+          if ($LASTEXITCODE -ne 0 -or $output -match "SCRIPT ERROR:|ERROR: Failed to load script|Parse Error:") {
+            throw "Headless scene startup reported script errors."
+          }
 
       - name: Export Windows 64-bit release
         run: |

@@ -278,7 +278,7 @@ func _create_building(center: Vector3, width: float, height: float, depth: float
 	var glass := _mat(Color(0.075, 0.16, 0.22), 0.24)
 	var frame := _mat(Color(0.18, 0.19, 0.18), 0.68)
 	var balcony := _mat(Color(0.36, 0.35, 0.32), 0.76)
-	var floors := max(2, int(height / 3.1))
+	var floors: int = maxi(2, int(height / 3.1))
 	var glass_transforms: Array[Transform3D] = []
 	var frame_transforms: Array[Transform3D] = []
 	var sill_transforms: Array[Transform3D] = []

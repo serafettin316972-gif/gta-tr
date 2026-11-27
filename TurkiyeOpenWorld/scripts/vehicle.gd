@@ -208,3 +208,4 @@ func _physics_process(delta: float) -> void:
 	velocity.z = forward.z * speed
 	velocity.y -= 9.8 * delta
 	move_and_slide()
+

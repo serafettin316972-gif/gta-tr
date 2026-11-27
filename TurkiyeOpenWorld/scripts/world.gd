@@ -295,7 +295,7 @@ func _create_building(center: Vector3, width: float, height: float, depth: float
 
 	# Ground floor: glazed shopfronts, a separate entrance door and sign fascia.
 	var front_z: float = -depth * 0.5 - 0.075
-	var shop_glass := _mat(Color(0.10, 0.18, 0.20), 0.24, 0.05)
+	var shop_glass := _mat(Color(0.10, 0.18, 0.20), 0.24)
 	_box(building, Vector3(-width * 0.22, floor_height * 0.52, front_z), Vector3(width * 0.38, floor_height * 0.62, 0.08), shop_glass)
 	_box(building, Vector3(width * 0.22, floor_height * 0.52, front_z), Vector3(width * 0.30, floor_height * 0.62, 0.08), shop_glass)
 	_box(building, Vector3(width * 0.02, floor_height * 0.48, front_z - 0.065), Vector3(0.92, floor_height * 0.82, 0.12), wood)

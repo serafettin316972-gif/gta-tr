@@ -2,7 +2,7 @@ name: Türkiye Open World - Windows x64
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, gta5-style-rebuild]
     paths:
       - "TurkiyeOpenWorld/**"
       - ".github/workflows/turkiye-open-world-windows.yml"

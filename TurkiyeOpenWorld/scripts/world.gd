@@ -37,7 +37,7 @@ func _box(parent: Node3D, pos: Vector3, size: Vector3, color: Color) -> MeshInst
 	mesh.size = size
 	node.mesh = mesh
 	node.position = pos
-	node.material_override = _mat(color)
+	node.material_override = color if color is Material else _mat(color)
 	parent.add_child(node)
 	return node
 
@@ -165,7 +165,7 @@ func _create_building(center: Vector3, width: float, height: float, depth: float
 	collision.position.y = height * 0.5
 	building.add_child(collision)
 
-	var glass := _mat(Color(0.095, 0.19, 0.25), 0.28, 0.12)
+	var glass := _mat(Color(0.095, 0.19, 0.25), 0.28)
 	var frame := _mat(Color(0.22, 0.22, 0.20), 0.72)
 	var balcony := _mat(Color(0.39, 0.38, 0.35), 0.8)
 	var floors := max(2, int(height / 3.1))

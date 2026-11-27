@@ -262,10 +262,25 @@ func _multi_boxes(parent: Node3D, size: Vector3, material: Material, transforms:
 	parent.add_child(node)
 
 func _create_building(center: Vector3, width: float, height: float, depth: float, wall_color: Color) -> void:
+	# Modular Turkish apartment block: layered facade, real balcony depth,
+	# framed glazing, shopfront, entrance, AC units and a detailed roofline.
 	var building := StaticBody3D.new()
 	building.position = center
 	add_child(building)
-	_box(building, Vector3(0, height * 0.5, 0), Vector3(width, height, depth), wall_color)
+
+	var floors: int = maxi(2, int(height / 3.1))
+	var floor_height: float = height / float(floors)
+	var facade := _mat(wall_color, 0.92)
+	var trim := _mat(wall_color.darkened(0.20), 0.86)
+	var concrete := _mat(Color(0.56, 0.54, 0.49), 0.9)
+	var dark_glass := _mat(Color(0.045, 0.105, 0.15), 0.2, 0.12)
+	var glass_reflect := _mat(Color(0.20, 0.31, 0.35), 0.22, 0.08)
+	var metal := _mat(Color(0.16, 0.18, 0.19), 0.55, 0.45)
+	var wood := _mat(Color(0.25, 0.12, 0.065), 0.72)
+	var sign_red := _mat(Color(0.62, 0.075, 0.045), 0.6)
+	var sign_light := _mat(Color(0.88, 0.79, 0.60), 0.75)
+
+	_box(building, Vector3(0, height * 0.5, 0), Vector3(width, height, depth), facade)
 	var collision := CollisionShape3D.new()
 	var shape := BoxShape3D.new()
 	shape.size = Vector3(width, height, depth)
@@ -273,54 +288,96 @@ func _create_building(center: Vector3, width: float, height: float, depth: float
 	collision.position.y = height * 0.5
 	building.add_child(collision)
 
-	# Repeated facade details are batched into MultiMeshes: far fewer draw calls
-	# than creating an individual MeshInstance for every window and railing.
-	var glass := _mat(Color(0.075, 0.16, 0.22), 0.24)
-	var frame := _mat(Color(0.18, 0.19, 0.18), 0.68)
-	var balcony := _mat(Color(0.36, 0.35, 0.32), 0.76)
-	var floors: int = maxi(2, int(height / 3.1))
-	var glass_transforms: Array[Transform3D] = []
-	var frame_transforms: Array[Transform3D] = []
-	var sill_transforms: Array[Transform3D] = []
-	var rail_transforms: Array[Transform3D] = []
-	for floor_index in range(floors):
-		var y := 1.55 + floor_index * 3.05
-		for column in range(2):
-			var x := -width * 0.25 if column == 0 else width * 0.25
-			var front_z := -depth * 0.5 - 0.045
-			glass_transforms.append(Transform3D(Basis(), Vector3(x, y, front_z)))
-			frame_transforms.append(Transform3D(Basis(), Vector3(x - 0.72, y, front_z - 0.018)))
-			frame_transforms.append(Transform3D(Basis(), Vector3(x + 0.72, y, front_z - 0.018)))
-			frame_transforms.append(Transform3D(Basis(), Vector3(x, y + 0.78, front_z - 0.018)))
-			frame_transforms.append(Transform3D(Basis(), Vector3(x, y - 0.78, front_z - 0.018)))
-			sill_transforms.append(Transform3D(Basis(), Vector3(x, y - 0.86, front_z - 0.05)))
-			rail_transforms.append(Transform3D(Basis(), Vector3(x, y - 0.52, front_z - 0.10)))
-			for rail_x in [-0.68, 0.0, 0.68]:
-				rail_transforms.append(Transform3D(Basis(), Vector3(x + rail_x, y - 0.52, front_z - 0.12)))
-	_multi_boxes(building, Vector3(1.25, 1.35, 0.045), glass, glass_transforms)
-	_multi_boxes(building, Vector3(0.045, 1.52, 0.07), frame, frame_transforms)
-	_multi_boxes(building, Vector3(1.52, 0.075, 0.15), balcony, sill_transforms)
-	_multi_boxes(building, Vector3(1.48, 0.055, 0.06), balcony, rail_transforms)
+	# Ground-floor plinth and projecting cornice.
+	_box(building, Vector3(0, 0.18, 0), Vector3(width + 0.12, 0.36, depth + 0.12), concrete)
+	_box(building, Vector3(0, floor_height, -depth * 0.5 - 0.07), Vector3(width + 0.18, 0.16, 0.20), trim)
+	_box(building, Vector3(0, height - 0.12, 0), Vector3(width + 0.42, 0.24, depth + 0.42), trim)
 
-	# A contrasting ground floor and restrained sign panel make blocks read as
-	# occupied Turkish neighbourhood buildings rather than plain cubes.
-	_box(building, Vector3(0, 0.72, -depth * 0.5 - 0.035), Vector3(width * 0.82, 1.35, 0.10), _mat(wall_color.darkened(0.22)))
-	_box(building, Vector3(0, 1.52, -depth * 0.5 - 0.10), Vector3(width * 0.48, 0.22, 0.06), _mat(Color(0.72, 0.12, 0.075), 0.6))
+	# Ground floor: glazed shopfronts, a separate entrance door and sign fascia.
+	var front_z: float = -depth * 0.5 - 0.075
+	var shop_glass := _mat(Color(0.10, 0.18, 0.20), 0.24, 0.05)
+	_box(building, Vector3(-width * 0.22, floor_height * 0.52, front_z), Vector3(width * 0.38, floor_height * 0.62, 0.08), shop_glass)
+	_box(building, Vector3(width * 0.22, floor_height * 0.52, front_z), Vector3(width * 0.30, floor_height * 0.62, 0.08), shop_glass)
+	_box(building, Vector3(width * 0.02, floor_height * 0.48, front_z - 0.065), Vector3(0.92, floor_height * 0.82, 0.12), wood)
+	_box(building, Vector3(width * 0.02, floor_height * 0.48, front_z - 0.135), Vector3(0.72, floor_height * 0.66, 0.035), shop_glass)
+	_box(building, Vector3(0, floor_height * 0.94, front_z - 0.09), Vector3(width * 0.86, 0.42, 0.16), sign_red)
+	_box(building, Vector3(0, floor_height * 0.94, front_z - 0.18), Vector3(width * 0.72, 0.10, 0.025), sign_light)
+	_box(building, Vector3(0, floor_height * 0.12, front_z - 0.11), Vector3(width * 0.90, 0.16, 0.18), concrete)
 
-	# Roof parapet and a small water tank vary the skyline.
+	# Upper floors: windows, deep balcony slabs and metal railings.
+	for floor_index in range(1, floors):
+		var y: float = floor_height * (float(floor_index) + 0.53)
+		var window_width: float = minf(1.42, width * 0.19)
+		var window_height: float = minf(1.62, floor_height * 0.57)
+		for column in range(3):
+			var x: float = (float(column) - 1.0) * width * 0.29
+			var z: float = -depth * 0.5 - 0.055
+			_box(building, Vector3(x, y, z), Vector3(window_width, window_height, 0.09), dark_glass)
+			# Thick side and top/bottom window frames.
+			_box(building, Vector3(x - window_width * 0.5, y, z - 0.065), Vector3(0.055, window_height + 0.12, 0.07), metal)
+			_box(building, Vector3(x + window_width * 0.5, y, z - 0.065), Vector3(0.055, window_height + 0.12, 0.07), metal)
+			_box(building, Vector3(x, y - window_height * 0.5, z - 0.065), Vector3(window_width + 0.10, 0.06, 0.07), metal)
+			_box(building, Vector3(x, y + window_height * 0.5, z - 0.065), Vector3(window_width + 0.10, 0.06, 0.07), metal)
+			_box(building, Vector3(x, y, z - 0.105), Vector3(0.035, window_height, 0.025), glass_reflect)
+
+			# Alternate apartments receive balconies; remaining bays get flower ledges.
+			if (column + floor_index) % 2 == 0:
+				var balcony_y: float = y - window_height * 0.5 - 0.12
+				_box(building, Vector3(x, balcony_y, z - 0.48), Vector3(window_width + 0.52, 0.14, 0.92), concrete)
+				_box(building, Vector3(x, balcony_y + 0.48, z - 0.90), Vector3(window_width + 0.48, 0.055, 0.055), metal)
+				_box(building, Vector3(x - (window_width + 0.48) * 0.5, balcony_y + 0.24, z - 0.90), Vector3(0.055, 0.48, 0.055), metal)
+				_box(building, Vector3(x + (window_width + 0.48) * 0.5, balcony_y + 0.24, z - 0.90), Vector3(0.055, 0.48, 0.055), metal)
+				for rail_index in range(3):
+					var rail_x: float = x + (float(rail_index) - 1.0) * (window_width + 0.48) / 3.0
+					_box(building, Vector3(rail_x, balcony_y + 0.24, z - 0.90), Vector3(0.035, 0.44, 0.035), metal)
+			else:
+				_box(building, Vector3(x, y - window_height * 0.5 - 0.12, z - 0.16), Vector3(window_width + 0.24, 0.12, 0.30), concrete)
+
+		# Exterior AC compressor under a randomly selected window.
+		if floor_index % 2 == 1:
+			var ac_x: float = width * 0.38
+			_box(building, Vector3(ac_x, y - 0.68, front_z - 0.20), Vector3(0.48, 0.34, 0.30), _mat(Color(0.78, 0.79, 0.76), 0.62))
+			_box(building, Vector3(ac_x, y - 0.68, front_z - 0.36), Vector3(0.24, 0.22, 0.025), metal)
+
+	# Vertical facade pilasters and subtle floor bands stop the block reading as a cube.
 	for side in [-1, 1]:
-		_box(building, Vector3(side * width * 0.5, height + 0.22, 0), Vector3(0.18, 0.44, depth + 0.20), wall_color.darkened(0.14))
-		_box(building, Vector3(0, height + 0.22, side * depth * 0.5), Vector3(width + 0.20, 0.44, 0.18), wall_color.darkened(0.14))
-	if height > 13.0:
-		var tank := MeshInstance3D.new()
-		var tank_mesh := CylinderMesh.new()
-		tank_mesh.top_radius = 0.62
-		tank_mesh.bottom_radius = 0.68
-		tank_mesh.height = 1.35
-		tank.mesh = tank_mesh
-		tank.position = Vector3(width * 0.22, height + 0.92, depth * 0.18)
-		tank.material_override = _mat(Color(0.25, 0.30, 0.32), 0.5)
-		building.add_child(tank)
+		_box(building, Vector3(side * (width * 0.5 - 0.14), height * 0.53, -depth * 0.5 - 0.08), Vector3(0.22, height * 0.94, 0.16), trim)
+	for floor_index in range(1, floors):
+		_box(building, Vector3(0, floor_height * floor_index, -depth * 0.5 - 0.11), Vector3(width + 0.12, 0.09, 0.18), trim)
+
+	# Side-wall windows add detail when the player approaches from cross streets.
+	for side in [-1, 1]:
+		for floor_index in range(1, floors):
+			var side_y: float = floor_height * (float(floor_index) + 0.5)
+			for column in range(2):
+				var side_z: float = (float(column) - 0.5) * depth * 0.42
+				_box(building, Vector3(side * (width * 0.5 + 0.055), side_y, side_z), Vector3(0.09, 1.22, 1.05), dark_glass)
+				_box(building, Vector3(side * (width * 0.5 + 0.12), side_y, side_z - 0.56), Vector3(0.06, 1.30, 0.055), metal)
+				_box(building, Vector3(side * (width * 0.5 + 0.12), side_y, side_z + 0.56), Vector3(0.06, 1.30, 0.055), metal)
+
+	# Roof terrace parapet, access hut, water tank and satellite dishes.
+	for side in [-1, 1]:
+		_box(building, Vector3(side * width * 0.5, height + 0.38, 0), Vector3(0.18, 0.76, depth + 0.24), trim)
+		_box(building, Vector3(0, height + 0.38, side * depth * 0.5), Vector3(width + 0.24, 0.76, 0.18), trim)
+	_box(building, Vector3(-width * 0.25, height + 0.72, depth * 0.18), Vector3(2.0, 1.25, 2.0), facade.darkened(0.08))
+	var tank := MeshInstance3D.new()
+	var tank_mesh := CylinderMesh.new()
+	tank_mesh.top_radius = 0.55
+	tank_mesh.bottom_radius = 0.62
+	tank_mesh.height = 1.15
+	tank.mesh = tank_mesh
+	tank.position = Vector3(width * 0.24, height + 1.0, depth * 0.18)
+	tank.material_override = _mat(Color(0.24, 0.29, 0.31), 0.42, 0.35)
+	building.add_child(tank)
+	var dish := MeshInstance3D.new()
+	var dish_mesh := SphereMesh.new()
+	dish_mesh.radial_segments = 12
+	dish_mesh.rings = 6
+	dish.mesh = dish_mesh
+	dish.scale = Vector3(0.52, 0.12, 0.52)
+	dish.position = Vector3(-width * 0.28, height + 1.02, -depth * 0.18)
+	dish.material_override = metal
+	building.add_child(dish)
 
 func _spawn_player() -> void:
 	player = PlayerScript.new()

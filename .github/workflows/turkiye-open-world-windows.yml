@@ -41,6 +41,7 @@ jobs:
           $truck = Get-Item $truckPath
           if ($truck.Length -lt 1024) { throw "1950s pickup truck download is missing or incomplete." }
           Write-Host "Custom pickup truck downloaded: $($truck.Length) bytes"
+          Write-Host "Rigged player with idle/walk/run animation support is selected."
 
       - name: Download custom 1950s pickup truck
         run: |

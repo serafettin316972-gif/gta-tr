@@ -19,6 +19,7 @@ var e_was_down := false
 
 func _ready() -> void:
 	_setup_world()
+	_spawn_environment_assets()
 	_spawn_player()
 	_spawn_traffic()
 	_spawn_player_vehicle()
@@ -153,6 +154,56 @@ func _setup_world() -> void:
 		minaret.position = Vector3(x, 6.5, 0)
 		minaret.material_override = _mat(Color(0.8, 0.76, 0.67))
 		mosque.add_child(minaret)
+
+
+func _spawn_asset(file_name: String, world_position: Vector3, model_scale: float = 1.0, yaw: float = 0.0) -> Node3D:
+	var packed := load("res://assets/" + file_name) as PackedScene
+	if packed == null:
+		push_warning("3D asset could not be loaded: " + file_name)
+		return null
+	var instance := packed.instantiate() as Node3D
+	if instance == null:
+		push_warning("3D asset root is not Node3D: " + file_name)
+		return null
+	instance.position = world_position
+	instance.rotation.y = yaw
+	instance.scale = Vector3.ONE * model_scale
+	instance.name = file_name.get_basename().replace("-", "_")
+	add_child(instance)
+	return instance
+
+
+func _spawn_environment_assets() -> void:
+	# Two extra parked vehicles add variety while keeping the player's pickup unique.
+	_spawn_asset("1950s-roadster.glb", Vector3(-7.0, 0.0, 7.5), 1.0, PI * 0.5)
+	_spawn_asset("1990s-taxi.glb", Vector3(9.0, 0.0, -7.5), 1.0, -PI * 0.5)
+
+	# A compact traffic island on a distant four-way intersection.
+	_spawn_asset("roundabout-light.glb", Vector3(-48.0, 0.02, -48.0), 0.8, 0.0)
+
+	# Street-side construction details and barriers.
+	for index in range(4):
+		_spawn_asset("concrete-barrier.glb", Vector3(20.0 + index * 2.5, 0.0, 18.0), 0.9, PI * 0.5)
+	for index in range(2):
+		_spawn_asset("construction-barrier.glb", Vector3(17.0 + index * 4.0, 0.0, 21.0), 0.85, PI * 0.5)
+
+	# Fencing and brick boundary around the small green area.
+	_spawn_asset("brick-wall.glb", Vector3(-36.0, 0.0, 19.0), 0.8, 0.0)
+	_spawn_asset("brick-wall.glb", Vector3(-36.0, 0.0, 31.0), 0.8, 0.0)
+	_spawn_asset("chain-link-fence-light.glb", Vector3(-19.0, 0.0, 22.0), 0.8, PI * 0.5)
+	_spawn_asset("chain-link-fence-light.glb", Vector3(-19.0, 0.0, 31.0), 0.8, PI * 0.5)
+
+	# Hydrants are spaced along sidewalks instead of clustered together.
+	for hydrant_position in [
+		Vector3(-8.0, 0.0, 8.5),
+		Vector3(14.0, 0.0, -8.5),
+		Vector3(-31.0, 0.0, 7.5),
+		Vector3(31.0, 0.0, 7.5)
+	]:
+		_spawn_asset("fire-hydrant.glb", hydrant_position, 0.7, 0.0)
+
+	# A directional street marker at the nearby junction.
+	_spawn_asset("direction-arrow.glb", Vector3(5.5, 0.0, -5.5), 0.8, PI * 0.25)
 
 func _multi_boxes(parent: Node3D, size: Vector3, material: Material, transforms: Array[Transform3D]) -> void:
 	if transforms.is_empty():

@@ -61,12 +61,17 @@ func _setup_world() -> void:
 	environment.ambient_light_color = Color(0.72, 0.76, 0.82)
 	environment.ambient_light_energy = 0.65
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	environment.fog_enabled = true
+	environment.fog_light_color = Color(0.63, 0.70, 0.77)
+	environment.fog_density = 0.0018
 	world_environment.environment = environment
 	add_child(world_environment)
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-48, -35, 0)
 	sun.light_energy = 1.15
 	sun.shadow_enabled = true
+	sun.directional_shadow_max_distance = 90.0
+	sun.shadow_bias = 0.08
 	add_child(sun)
 	_static_box(Vector3(0, -0.35, 0), Vector3(260, 0.6, 260), Color(0.28, 0.34, 0.29))
 	for i in range(-5, 6):
@@ -193,13 +198,13 @@ func _create_building(center: Vector3, width: float, height: float, depth: float
 func _spawn_player() -> void:
 	player = PlayerScript.new()
 	player.name = "AnaKarakter"
-	player.position = Vector3(0, 1, 4)
+	player.position = Vector3(0, 0, 4)
 	add_child(player)
 
 func _spawn_traffic() -> void:
 	for i in range(8):
 		var car = VehicleScript.new()
-		car.position = Vector3(randf_range(-90, 90), 0.2, randf_range(-90, 90))
+		car.position = Vector3(randf_range(-90, 90), 0.0, randf_range(-90, 90))
 		car.rotation.y = randf() * TAU
 		add_child(car)
 
@@ -344,6 +349,6 @@ func _load_game() -> void:
 		money = int(parsed.get("money", money))
 		wanted = int(parsed.get("wanted", 0))
 		mission_stage = int(parsed.get("mission_stage", 0))
-		var saved_position = parsed.get("player_position", [0, 1, 4])
+		var saved_position = parsed.get("player_position", [0, 0, 4])
 		if saved_position.size() == 3:
 			player.global_position = Vector3(saved_position[0], saved_position[1], saved_position[2])

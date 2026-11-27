@@ -75,20 +75,32 @@ func _setup_world() -> void:
 		for side in [-1, 1]:
 			_static_box(Vector3(i * 24 + side * 6, 0.08, 0), Vector3(2, 0.22, 250), Color(0.52, 0.5, 0.45))
 			_static_box(Vector3(0, 0.08, i * 24 + side * 6), Vector3(250, 0.22, 2), Color(0.52, 0.5, 0.45))
-	for x in range(-5, 6):
-		for z in range(-5, 6):
+	# Fewer, larger blocks leave room for streets and keep draw calls controlled.
+	for x in range(-4, 5):
+		for z in range(-4, 5):
 			var center := Vector3(x * 24 + 12, 0, z * 24 + 12)
-			var height := randf_range(8, 27)
-			var width := randf_range(8, 13)
-			var depth := randf_range(8, 13)
-			var palette := [Color(0.67, 0.58, 0.48), Color(0.72, 0.69, 0.61), Color(0.48, 0.52, 0.56), Color(0.78, 0.73, 0.63), Color(0.55, 0.43, 0.34)]
-			_box(self, center + Vector3(0, height / 2, 0), Vector3(width, height, depth), palette[randi() % palette.size()])
-			for floor_index in range(1, int(height / 3.0)):
-				var y := floor_index * 3.0
-				for side in [-1, 1]:
-					_box(self, center + Vector3(side * (width / 2 + 0.025), y, 0), Vector3(0.07, 0.12, depth * 0.82), Color(0.32, 0.32, 0.31))
-				for side_x in [-1, 1]:
-					_box(self, center + Vector3(side_x * width * 0.23, y + 0.65, -depth / 2 - 0.035), Vector3(1.25, 1.15, 0.08), Color(0.16, 0.27, 0.34))
+			var height := randf_range(9, 22)
+			var width := randf_range(8.5, 12.0)
+			var depth := randf_range(8.5, 12.0)
+			var palette := [Color(0.62, 0.53, 0.44), Color(0.72, 0.68, 0.59), Color(0.48, 0.52, 0.55), Color(0.77, 0.72, 0.62), Color(0.54, 0.42, 0.34)]
+			_create_building(center, width, height, depth, palette[randi() % palette.size()])
+
+	# Dashed lane markings and a small pedestrian crossing near the spawn.
+	var road_paint := _mat(Color(0.82, 0.81, 0.75), 0.92)
+	for dash in range(-9, 10):
+		_box(self, Vector3(dash * 4.0, 0.075, 0), Vector3(2.0, 0.025, 0.13), road_paint)
+		_box(self, Vector3(0, 0.075, dash * 4.0), Vector3(0.13, 0.025, 2.0), road_paint)
+	for stripe_index in range(6):
+		_box(self, Vector3(-3.0 + stripe_index * 1.2, 0.09, 5.1), Vector3(0.72, 0.035, 2.0), road_paint)
+
+	# Simple street lamps add scale cues without expensive lighting effects.
+	for lamp_index in range(12):
+		var lamp := Node3D.new()
+		lamp.position = Vector3(-72 + lamp_index * 13.0, 0, 7.2)
+		add_child(lamp)
+		_box(lamp, Vector3(0, 2.4, 0), Vector3(0.12, 4.8, 0.12), Color(0.18, 0.19, 0.2))
+		_box(lamp, Vector3(0.55, 4.65, 0), Vector3(1.15, 0.12, 0.12), Color(0.18, 0.19, 0.2))
+		_box(lamp, Vector3(1.05, 4.55, 0), Vector3(0.45, 0.18, 0.34), Color(0.92, 0.82, 0.58))
 	_box(self, Vector3(0, -0.2, -132), Vector3(260, 0.2, 20), Color(0.12, 0.34, 0.48))
 	_box(self, Vector3(-28, 0.08, 28), Vector3(17, 0.18, 18), Color(0.18, 0.38, 0.2))
 	for i in range(18):
@@ -135,6 +147,48 @@ func _setup_world() -> void:
 		minaret.position = Vector3(x, 6.5, 0)
 		minaret.material_override = _mat(Color(0.8, 0.76, 0.67))
 		mosque.add_child(minaret)
+
+func _create_building(center: Vector3, width: float, height: float, depth: float, wall_color: Color) -> void:
+	var building := StaticBody3D.new()
+	building.position = center
+	add_child(building)
+	_box(building, Vector3(0, height * 0.5, 0), Vector3(width, height, depth), wall_color)
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(width, height, depth)
+	collision.shape = shape
+	collision.position.y = height * 0.5
+	building.add_child(collision)
+
+	var glass := _mat(Color(0.095, 0.19, 0.25), 0.28, 0.12)
+	var frame := _mat(Color(0.22, 0.22, 0.20), 0.72)
+	var balcony := _mat(Color(0.39, 0.38, 0.35), 0.8)
+	var floors := max(2, int(height / 3.1))
+	for floor_index in range(floors):
+		var y := 1.55 + floor_index * 3.05
+		for column in range(2):
+			var x := -width * 0.25 if column == 0 else width * 0.25
+			_box(building, Vector3(x, y, -depth * 0.5 - 0.025), Vector3(1.45, 1.55, 0.055), frame)
+			_box(building, Vector3(x, y, -depth * 0.5 - 0.065), Vector3(1.22, 1.30, 0.035), glass)
+			_box(building, Vector3(x, y - 0.73, -depth * 0.5 - 0.095), Vector3(1.52, 0.07, 0.12), balcony)
+			_box(building, Vector3(x, y - 0.32, -depth * 0.5 - 0.13), Vector3(1.48, 0.055, 0.055), balcony)
+			for rail_x in [-0.7, 0.0, 0.7]:
+				_box(building, Vector3(x + rail_x, y - 0.52, -depth * 0.5 - 0.13), Vector3(0.035, 0.36, 0.045), balcony)
+
+	# Roof parapet and a rooftop water tank give the skyline more variation.
+	for side in [-1, 1]:
+		_box(building, Vector3(side * width * 0.5, height + 0.28, 0), Vector3(0.22, 0.55, depth + 0.25), wall_color.darkened(0.12))
+		_box(building, Vector3(0, height + 0.28, side * depth * 0.5), Vector3(width + 0.25, 0.55, 0.22), wall_color.darkened(0.12))
+	if height > 13.0:
+		var tank := MeshInstance3D.new()
+		var tank_mesh := CylinderMesh.new()
+		tank_mesh.top_radius = 0.65
+		tank_mesh.bottom_radius = 0.72
+		tank_mesh.height = 1.5
+		tank.mesh = tank_mesh
+		tank.position = Vector3(width * 0.22, height + 1.0, depth * 0.18)
+		tank.material_override = _mat(Color(0.27, 0.31, 0.32), 0.52)
+		building.add_child(tank)
 
 func _spawn_player() -> void:
 	player = PlayerScript.new()

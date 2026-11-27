@@ -36,6 +36,14 @@ jobs:
           if ($model.Length -lt 1024) { throw "Custom GLB character download is missing or incomplete." }
           Write-Host "Custom character downloaded: $($model.Length) bytes"
 
+      - name: Download custom 1950s pickup truck
+        run: |
+          $modelPath = "assets/1950s-pickup-truck.glb"
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/serafettin316972-gif/3d/main/1950s-pickup-truck.glb" -OutFile $modelPath
+          $model = Get-Item $modelPath
+          if ($model.Length -lt 1024) { throw "Custom pickup truck download is missing or incomplete." }
+          Write-Host "Custom pickup truck downloaded: $($model.Length) bytes"
+
       - name: Download Godot 4.3 and export templates
         run: |
           $godotZip = "$env:RUNNER_TEMP\godot.zip"

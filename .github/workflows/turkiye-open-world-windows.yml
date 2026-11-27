@@ -52,7 +52,7 @@ jobs:
           Write-Host "Custom pickup truck downloaded: $($model.Length) bytes"
 
 
-      - name: Download nine new environment and vehicle models
+      - name: Download sixteen environment, vehicle and landmark models
         run: |
           $assets = @{
             "1950s-roadster.glb" = "1950s-roadster.glb"
@@ -64,6 +64,13 @@ jobs:
             "direction-arrow.glb" = "direction-arrow.glb"
             "fire-hydrant.glb" = "fire-hydrant.glb"
             "roundabout-light.glb" = "roundabout-light.glb"
+            "bank-light.glb" = "bank-light.glb"
+            "cinema-light.glb" = "cinema-light.glb"
+            "city-block-filler-light.glb" = "city-block-filler-light.glb"
+            "general-store.glb" = "general-store.glb"
+            "saloon.glb" = "saloon.glb"
+            "sheriff-office.glb" = "sheriff-office.glb"
+            "tunnel-entrance.glb" = "tunnel-entrance.glb"
           }
           foreach ($name in $assets.Keys) {
             $path = "assets/$name"

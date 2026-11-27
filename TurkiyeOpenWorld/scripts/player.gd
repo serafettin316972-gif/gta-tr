@@ -23,6 +23,9 @@ var current_vehicle: CharacterBody3D
 var health := 100
 
 var _materials: Dictionary = {}
+var imported_animation_player: AnimationPlayer
+var imported_animations: Dictionary = {}
+var imported_current_animation := ""
 
 func _ready() -> void:
 	_build_character()
@@ -84,13 +87,13 @@ func _build_character() -> void:
 	add_child(visual)
 
 	# Prefer the custom GLB character downloaded by the Windows build workflow.
-	var imported_scene := load("res://assets/man-base-character-light.glb") as PackedScene
+	var imported_scene := load("res://assets/man-base-character-rigged.glb") as PackedScene
 	if imported_scene != null:
 		var imported_model := imported_scene.instantiate() as Node3D
 		if imported_model != null:
 			visual.add_child(imported_model)
 			_fit_imported_model(imported_model)
-			_play_imported_idle(imported_model)
+			_setup_imported_animations(imported_model)
 			return
 
 	var tracksuit := _material("tracksuit", Color(0.018, 0.024, 0.032))
@@ -153,23 +156,58 @@ func _fit_imported_model(model: Node3D) -> void:
 		model.scale *= fit_scale
 		model.position.y = -min_y * fit_scale
 
-func _play_imported_idle(model: Node3D) -> void:
+func _setup_imported_animations(model: Node3D) -> void:
+	# GLB imports may expose one or more AnimationPlayer nodes. Cache clips by
+	# their names so locomotion can switch between idle, walk and run safely.
 	var players := model.find_children("*", "AnimationPlayer", true, false)
 	for item in players:
-		var animation_player := item as AnimationPlayer
-		if animation_player == null:
+		var candidate_player := item as AnimationPlayer
+		if candidate_player == null:
 			continue
-		var animations := animation_player.get_animation_list()
-		if animations.is_empty():
+		var clips := candidate_player.get_animation_list()
+		if clips.is_empty():
 			continue
-		var selected := str(animations[0])
-		for animation_name in animations:
-			var candidate := str(animation_name).to_lower()
-			if candidate.contains("idle"):
-				selected = str(animation_name)
-				break
-		animation_player.play(selected)
+		imported_animation_player = candidate_player
+		for clip in clips:
+			var clip_name := str(clip)
+			var normalized := clip_name.to_lower().replace("_", "").replace("-", "").replace(" ", "")
+			if normalized.contains("idle") or normalized.contains("breath"):
+				imported_animations["idle"] = clip_name
+			elif normalized.contains("run") or normalized.contains("sprint"):
+				imported_animations["run"] = clip_name
+			elif normalized.contains("walk") or normalized.contains("jog"):
+				imported_animations["walk"] = clip_name
+		break
+	_play_imported_animation("idle")
+
+func _play_imported_animation(state: String) -> void:
+	if imported_animation_player == null:
 		return
+	var selected := ""
+	if imported_animations.has(state):
+		selected = str(imported_animations[state])
+	elif state == "run" and imported_animations.has("walk"):
+		selected = str(imported_animations["walk"])
+	elif imported_animations.has("idle"):
+		selected = str(imported_animations["idle"])
+	else:
+		var clips := imported_animation_player.get_animation_list()
+		if not clips.is_empty():
+			selected = str(clips[0])
+	if selected.is_empty() or selected == imported_current_animation:
+		return
+	imported_current_animation = selected
+	imported_animation_player.play(selected, 0.18)
+
+func _update_imported_animation(moving: bool, running: bool) -> void:
+	if imported_animation_player == null:
+		return
+	if not moving:
+		_play_imported_animation("idle")
+	elif running:
+		_play_imported_animation("run")
+	else:
+		_play_imported_animation("walk")
 
 func _make_arm(side: int, jacket: Material, stripe_mat: Material, hand_mat: Material) -> Node3D:
 	var pivot := Node3D.new()
@@ -227,7 +265,11 @@ func _physics_process(delta: float) -> void:
 		velocity.y = jump_velocity
 
 	move_and_slide()
-	_animate_character(delta, input_dir.length() > 0.05, running)
+	var is_moving := input_dir.length() > 0.05
+	if imported_animation_player != null:
+		_update_imported_animation(is_moving, running)
+	else:
+		_animate_character(delta, is_moving, running)
 
 func _animate_character(delta: float, moving: bool, running: bool) -> void:
 	if left_leg == null or right_leg == null or left_arm == null or right_arm == null or torso == null:

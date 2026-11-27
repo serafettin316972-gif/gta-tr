@@ -202,16 +202,30 @@ func _spawn_player() -> void:
 	add_child(player)
 
 func _spawn_traffic() -> void:
+	# Keep traffic on the actual road grid instead of spawning inside buildings.
 	for i in range(8):
 		var car = VehicleScript.new()
-		car.position = Vector3(randf_range(-90, 90), 0.0, randf_range(-90, 90))
-		car.rotation.y = randf() * TAU
+		var along := randf_range(-100.0, 100.0)
+		var lane := randf_range(-1.8, 1.8)
+		var road_index := randi_range(-4, 4)
+		if randf() < 0.5:
+			car.position = Vector3(along, 0.0, road_index * 24.0 + lane)
+			car.rotation.y = 0.0 if randf() < 0.5 else PI
+		else:
+			car.position = Vector3(road_index * 24.0 + lane, 0.0, along)
+			car.rotation.y = PI / 2.0 if randf() < 0.5 else -PI / 2.0
 		add_child(car)
 
 func _spawn_npcs() -> void:
+	# Pedestrians start on sidewalks/road edges, not inside apartment collision.
 	for i in range(24):
 		var npc = NPCScript.new()
-		npc.position = Vector3(randf_range(-80, 80), 0, randf_range(-80, 80))
+		var along := randf_range(-100.0, 100.0)
+		var road_index := randi_range(-4, 4)
+		if randf() < 0.5:
+			npc.position = Vector3(along, 0.0, road_index * 24.0 + randf_range(-3.0, 3.0))
+		else:
+			npc.position = Vector3(road_index * 24.0 + randf_range(-3.0, 3.0), 0.0, along)
 		add_child(npc)
 
 func _setup_hud() -> void:

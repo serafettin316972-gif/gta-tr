@@ -12,15 +12,9 @@ Bu dal, mevcut prototipi bozmadan GTA V seviyesinde bir görsel hedefe doğru ay
 - Araçlar: lisansı doğrulanmış 3D araç modelleri ve tekerlek/süspansiyon animasyonu.
 - Optimizasyon: LOD, görünürlük menzili, occlusion, sınırlı gerçek zamanlı gölge ve ölçeklenebilir render ayarları.
 
-## İlk entegre edilen kaynak
+## Varlık entegrasyonu
 
-**KinemIQ / Quaternius — Free Game Animations (GLB)**  
-Kaynak: https://github.com/Kinemiq/free-game-animations  
-Sürüm: v1.0  
-Lisans: CC0 1.0 (paket README ve LICENSE dosyalarını koru).  
-İndirme: https://github.com/Kinemiq/free-game-animations/releases/tag/v1.0
-
-Windows CI iş akışı bu paketi derleme sırasında `assets/third_party/kinemiq/` altına indirir ve Godot import işlemine dahil eder. Bu paket yalnızca animasyon kaynağıdır; ana karakterin nihai görünüşü olarak kabul edilmez. Oyunda ilk aşamada yalnızca idle, walk, run ve sprint gibi hareket klipleri kullanılacaktır.
+Bu ilk aşamada henüz harici karakter veya şehir modeli depoya eklenmedi. Yalnızca açık lisanslı, oyunda yeniden dağıtıma izin veren ve bu oyunun ihtiyaçlarıyla doğrudan ilgili olan insan karakteri, hareket animasyonu, şehir ve araç varlıkları seçilecek. Her dosya eklenmeden önce lisans ve gerçek oyun içi uyumluluk kontrol edilecek.
 
 ## Lisans kuralı
 

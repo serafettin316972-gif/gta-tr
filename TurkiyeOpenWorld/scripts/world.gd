@@ -81,8 +81,8 @@ func _setup_world() -> void:
 			_static_box(Vector3(i * 24 + side * 6, 0.08, 0), Vector3(2, 0.22, 250), Color(0.52, 0.5, 0.45))
 			_static_box(Vector3(0, 0.08, i * 24 + side * 6), Vector3(250, 0.22, 2), Color(0.52, 0.5, 0.45))
 	# Fewer, larger blocks leave room for streets and keep draw calls controlled.
-	for x in range(-4, 5):
-		for z in range(-4, 5):
+	for x in range(-3, 4):
+		for z in range(-3, 4):
 			var center := Vector3(x * 24 + 12, 0, z * 24 + 12)
 			var height := randf_range(9, 22)
 			var width := randf_range(8.5, 12.0)
@@ -153,6 +153,23 @@ func _setup_world() -> void:
 		minaret.material_override = _mat(Color(0.8, 0.76, 0.67))
 		mosque.add_child(minaret)
 
+func _multi_boxes(parent: Node3D, size: Vector3, material: Material, transforms: Array[Transform3D]) -> void:
+	if transforms.is_empty():
+		return
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	var instances := MultiMesh.new()
+	instances.transform_format = MultiMesh.TRANSFORM_3D
+	instances.mesh = mesh
+	instances.instance_count = transforms.size()
+	for index in range(transforms.size()):
+		instances.set_instance_transform(index, transforms[index])
+	var node := MultiMeshInstance3D.new()
+	node.multimesh = instances
+	node.material_override = material
+	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	parent.add_child(node)
+
 func _create_building(center: Vector3, width: float, height: float, depth: float, wall_color: Color) -> void:
 	var building := StaticBody3D.new()
 	building.position = center
@@ -165,34 +182,53 @@ func _create_building(center: Vector3, width: float, height: float, depth: float
 	collision.position.y = height * 0.5
 	building.add_child(collision)
 
-	var glass := _mat(Color(0.095, 0.19, 0.25), 0.28)
-	var frame := _mat(Color(0.22, 0.22, 0.20), 0.72)
-	var balcony := _mat(Color(0.39, 0.38, 0.35), 0.8)
+	# Repeated facade details are batched into MultiMeshes: far fewer draw calls
+	# than creating an individual MeshInstance for every window and railing.
+	var glass := _mat(Color(0.075, 0.16, 0.22), 0.24)
+	var frame := _mat(Color(0.18, 0.19, 0.18), 0.68)
+	var balcony := _mat(Color(0.36, 0.35, 0.32), 0.76)
 	var floors := max(2, int(height / 3.1))
+	var glass_transforms: Array[Transform3D] = []
+	var frame_transforms: Array[Transform3D] = []
+	var sill_transforms: Array[Transform3D] = []
+	var rail_transforms: Array[Transform3D] = []
 	for floor_index in range(floors):
 		var y := 1.55 + floor_index * 3.05
 		for column in range(2):
 			var x := -width * 0.25 if column == 0 else width * 0.25
-			_box(building, Vector3(x, y, -depth * 0.5 - 0.025), Vector3(1.45, 1.55, 0.055), frame)
-			_box(building, Vector3(x, y, -depth * 0.5 - 0.065), Vector3(1.22, 1.30, 0.035), glass)
-			_box(building, Vector3(x, y - 0.73, -depth * 0.5 - 0.095), Vector3(1.52, 0.07, 0.12), balcony)
-			_box(building, Vector3(x, y - 0.32, -depth * 0.5 - 0.13), Vector3(1.48, 0.055, 0.055), balcony)
-			for rail_x in [-0.7, 0.0, 0.7]:
-				_box(building, Vector3(x + rail_x, y - 0.52, -depth * 0.5 - 0.13), Vector3(0.035, 0.36, 0.045), balcony)
+			var front_z := -depth * 0.5 - 0.045
+			glass_transforms.append(Transform3D(Basis(), Vector3(x, y, front_z)))
+			frame_transforms.append(Transform3D(Basis(), Vector3(x - 0.72, y, front_z - 0.018)))
+			frame_transforms.append(Transform3D(Basis(), Vector3(x + 0.72, y, front_z - 0.018)))
+			frame_transforms.append(Transform3D(Basis(), Vector3(x, y + 0.78, front_z - 0.018)))
+			frame_transforms.append(Transform3D(Basis(), Vector3(x, y - 0.78, front_z - 0.018)))
+			sill_transforms.append(Transform3D(Basis(), Vector3(x, y - 0.86, front_z - 0.05)))
+			rail_transforms.append(Transform3D(Basis(), Vector3(x, y - 0.52, front_z - 0.10)))
+			for rail_x in [-0.68, 0.0, 0.68]:
+				rail_transforms.append(Transform3D(Basis(), Vector3(x + rail_x, y - 0.52, front_z - 0.12)))
+	_multi_boxes(building, Vector3(1.25, 1.35, 0.045), glass, glass_transforms)
+	_multi_boxes(building, Vector3(0.045, 1.52, 0.07), frame, frame_transforms)
+	_multi_boxes(building, Vector3(1.52, 0.075, 0.15), balcony, sill_transforms)
+	_multi_boxes(building, Vector3(1.48, 0.055, 0.06), balcony, rail_transforms)
 
-	# Roof parapet and a rooftop water tank give the skyline more variation.
+	# A contrasting ground floor and restrained sign panel make blocks read as
+	# occupied Turkish neighbourhood buildings rather than plain cubes.
+	_box(building, Vector3(0, 0.72, -depth * 0.5 - 0.035), Vector3(width * 0.82, 1.35, 0.10), _mat(wall_color.darkened(0.22)))
+	_box(building, Vector3(0, 1.52, -depth * 0.5 - 0.10), Vector3(width * 0.48, 0.22, 0.06), _mat(Color(0.72, 0.12, 0.075), 0.6))
+
+	# Roof parapet and a small water tank vary the skyline.
 	for side in [-1, 1]:
-		_box(building, Vector3(side * width * 0.5, height + 0.28, 0), Vector3(0.22, 0.55, depth + 0.25), wall_color.darkened(0.12))
-		_box(building, Vector3(0, height + 0.28, side * depth * 0.5), Vector3(width + 0.25, 0.55, 0.22), wall_color.darkened(0.12))
+		_box(building, Vector3(side * width * 0.5, height + 0.22, 0), Vector3(0.18, 0.44, depth + 0.20), wall_color.darkened(0.14))
+		_box(building, Vector3(0, height + 0.22, side * depth * 0.5), Vector3(width + 0.20, 0.44, 0.18), wall_color.darkened(0.14))
 	if height > 13.0:
 		var tank := MeshInstance3D.new()
 		var tank_mesh := CylinderMesh.new()
-		tank_mesh.top_radius = 0.65
-		tank_mesh.bottom_radius = 0.72
-		tank_mesh.height = 1.5
+		tank_mesh.top_radius = 0.62
+		tank_mesh.bottom_radius = 0.68
+		tank_mesh.height = 1.35
 		tank.mesh = tank_mesh
-		tank.position = Vector3(width * 0.22, height + 1.0, depth * 0.18)
-		tank.material_override = _mat(Color(0.27, 0.31, 0.32), 0.52)
+		tank.position = Vector3(width * 0.22, height + 0.92, depth * 0.18)
+		tank.material_override = _mat(Color(0.25, 0.30, 0.32), 0.5)
 		building.add_child(tank)
 
 func _spawn_player() -> void:
@@ -203,7 +239,7 @@ func _spawn_player() -> void:
 
 func _spawn_traffic() -> void:
 	# Keep traffic on the actual road grid instead of spawning inside buildings.
-	for i in range(8):
+	for i in range(6):
 		var car = VehicleScript.new()
 		var along := randf_range(-100.0, 100.0)
 		var lane := randf_range(-1.8, 1.8)
@@ -218,7 +254,7 @@ func _spawn_traffic() -> void:
 
 func _spawn_npcs() -> void:
 	# Pedestrians start on sidewalks/road edges, not inside apartment collision.
-	for i in range(24):
+	for i in range(14):
 		var npc = NPCScript.new()
 		var along := randf_range(-100.0, 100.0)
 		var road_index := randi_range(-4, 4)

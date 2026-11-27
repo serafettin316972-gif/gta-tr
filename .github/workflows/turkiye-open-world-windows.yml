@@ -47,6 +47,18 @@ jobs:
           & $godot.FullName --version
           if ($LASTEXITCODE -ne 0) { throw "Godot version check failed." }
 
+      - name: Download CC0 humanoid model and animation pack
+        run: |
+          $assetZip = "$env:RUNNER_TEMP\\kinemiq-glb.zip"
+          $assetDir = "assets/third_party/kinemiq"
+          New-Item -ItemType Directory -Force -Path $assetDir | Out-Null
+          Invoke-WebRequest -Uri "https://github.com/Kinemiq/free-game-animations/releases/download/v1.0/KinemIQ_Free_Animations_CC0_GLB.zip" -OutFile $assetZip
+          Expand-Archive -Path $assetZip -DestinationPath $assetDir -Force
+          $models = Get-ChildItem $assetDir -Filter "*.glb" -Recurse
+          if ($models.Count -eq 0) { throw "CC0 animation pack downloaded, but no GLB files were found." }
+          "Imported source asset files:"
+          $models | Select-Object -ExpandProperty FullName
+
       - name: Import project and parse all scripts
         run: |
           & $env:GODOT --headless --editor --path . --quit

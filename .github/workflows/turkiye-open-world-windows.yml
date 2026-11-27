@@ -27,13 +27,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download custom 3D player model
+      - name: Download custom rigged 3D player model
         run: |
           New-Item -ItemType Directory -Force -Path assets | Out-Null
-          $modelPath = "assets/man-base-character-light.glb"
-          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/serafettin316972-gif/3d/main/man-base-character-light.glb" -OutFile $modelPath
+          $modelPath = "assets/man-base-character-rigged.glb"
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/serafettin316972-gif/3d/main/man-base-character-rigged.glb" -OutFile $modelPath
           $model = Get-Item $modelPath
-          if ($model.Length -lt 1024) { throw "Custom GLB character download is missing or incomplete." }
+          if ($model.Length -lt 1024) { throw "Rigged GLB character download is missing or incomplete." }
           Write-Host "Custom character downloaded: $($model.Length) bytes"
 
           $truckPath = "assets/1950s-pickup-truck.glb"

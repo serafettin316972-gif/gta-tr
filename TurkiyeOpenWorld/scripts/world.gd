@@ -21,6 +21,7 @@ func _ready() -> void:
 	_setup_world()
 	_spawn_player()
 	_spawn_traffic()
+	_spawn_player_vehicle()
 	_spawn_npcs()
 	_setup_hud()
 	_load_game()
@@ -251,6 +252,17 @@ func _spawn_traffic() -> void:
 			car.position = Vector3(road_index * 24.0 + lane, 0.0, along)
 			car.rotation.y = PI / 2.0 if randf() < 0.5 else -PI / 2.0
 		add_child(car)
+
+
+func _spawn_player_vehicle() -> void:
+	# The user's 1950s pickup is parked beside the starting point and is
+	# immediately available as the player's personal vehicle.
+	var pickup = VehicleScript.new()
+	pickup.name = "Oyuncunun 1950ler Pickup Araci"
+	pickup.position = Vector3(3.2, 0.0, 4.0)
+	pickup.rotation.y = 0.0
+	add_child(pickup)
+
 
 func _spawn_npcs() -> void:
 	# Pedestrians start on sidewalks/road edges, not inside apartment collision.

@@ -46,6 +46,8 @@ func _ready() -> void:
 	camera.fov = 72
 	camera.current = true
 	camera_pivot.add_child(camera)
+	camera.call_deferred("make_current")
+	camera.far = 350.0
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _material(key: String, color: Color, roughness := 0.78, metallic := 0.0) -> StandardMaterial3D:

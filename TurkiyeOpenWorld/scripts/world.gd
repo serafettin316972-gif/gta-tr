@@ -31,7 +31,7 @@ func _mat(color: Color, rough := 0.85) -> StandardMaterial3D:
 	material.roughness = rough
 	return material
 
-func _box(parent: Node3D, pos: Vector3, size: Vector3, color: Color) -> MeshInstance3D:
+func _box(parent: Node3D, pos: Vector3, size: Vector3, color: Variant) -> MeshInstance3D:
 	var node := MeshInstance3D.new()
 	var mesh := BoxMesh.new()
 	mesh.size = size

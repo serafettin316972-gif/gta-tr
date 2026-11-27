@@ -104,7 +104,7 @@ func _fit_pickup_model(root: Node3D) -> void:
 	# Normalize imported model size using its mesh bounds, without changing gameplay physics.
 	var bounds := _collect_mesh_bounds(root)
 	if bounds.size.length() > 0.01:
-		var factor := 2.4 / max(bounds.size.y, 0.01)
+		var factor: float = 2.4 / maxf(bounds.size.y, 0.01)
 		root.scale = Vector3.ONE * factor
 		root.position.y = -bounds.position.y * factor
 
